@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+
+{% block title %}Facturación - Unimark{% endblock %}
+
+{% block extra_css %}
+<style>
+    .factura-main {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 1.5rem;
+    }
+
+    .search-results {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .producto-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .producto-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .producto-item.primera-necesidad {
+        border-left: 4px solid #27ae60;
+    }
+
+    .carrito-vacio {
+        text-align: center;
+        padding: 2rem;
+        color: #7f8c8d;
+    }
+
+    .carrito-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .carrito-item .cantidad-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .carrito-item .cantidad-control input {
+        width: 50px;
+        text-align: center;
+        padding: 0.25rem;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+    }
+
+    .cantidad-btn {
+        width: 25px;
+        height: 25px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .cantidad-btn.minus {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .cantidad-btn.plus {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .remove-item {
+        color: #e74c3c;
+        cursor: pointer;
+        font-size: 1.2rem;
+    }
+
+    @media (max-width: 900px) {
+        .factura-main {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <h1>Nueva Factura - {{ nombre_local }}</h1>
+</div>
+
+<div class="factura-main">
+    <!-- Panel Izquierdo: Busqueda y Cliente -->
+    <div>
+        <!-- Datos del Cliente -->
+        <div class="card mb-2">
+            <div class="card-header">
+                <h3 class="card-title">Datos del Cliente</h3>
+            </div>
+
+            <div class="d-flex gap-2 mb-2">
+                <div class="form-group" style="flex: 2;">
+                    <label class="form-label">Cedula</label>
+                    <input type="text"
+                           class="form-control"
+                           id="cliente-cedula"
+                           maxlength="10"
+                           placeholder="Ingrese cedula (10 digitos)">
+                </div>
+                <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                    <button type="button" class="btn btn-primary" onclick="buscarCliente()">Buscar</button>
+                    <button type="button" class="btn btn-secondary" onclick="consumidorFinal()">Cons. Final</button>
+                </div>
+            </div>
+
+            <div id="cliente-info" style="display: none;">
+                <div class="alert alert-success">
+                    <strong id="cliente-nombre"></strong><br>
+                    <small>Celular: <span id="cliente-celular"></span> | Correo: <span id="cliente-correo"></span></small>
+                </div>
+            </div>
+
+            <!-- Formulario nuevo cliente -->
+            <div id="nuevo-cliente-form" style="display: none;">
+                <div class="alert alert-warning">
+                    Cliente no encontrado. Complete los datos para registrarlo:
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="form-group" style="flex: 1;">
+                        <input type="text" class="form-control" id="nuevo-nombre" placeholder="Nombre">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <input type="text" class="form-control" id="nuevo-apellido" placeholder="Apellido">
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <div class="form-group" style="flex: 1;">
+                        <input type="text" class="form-control" id="nuevo-celular" placeholder="Celular">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <input type="email" class="form-control" id="nuevo-correo" placeholder="Correo">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" onclick="crearCliente()">Registrar Cliente</button>
+            </div>
+        </div>
+
+        <!-- Busqueda de Productos -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Buscar Productos</h3>
+            </div>
+
+            <div class="form-group">
+                <input type="text"
+                       class="form-control"
+                       id="buscar-producto"
+                       placeholder="Buscar por nombre o código..."
+                       onkeyup="buscarProducto(this.value)">
+            </div>
+
+            <div id="resultados-busqueda" class="search-results">
+                <p style="color: #7f8c8d; text-align: center;">Escriba para buscar productos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Derecho: Carrito -->
+    <div class="carrito">
+        <h3 style="margin-bottom: 1rem;">Carrito</h3>
+
+        <div id="carrito-items">
+            <div class="carrito-vacio">
+                <p>El carrito esta vacio</p>
+                <small>Busque y agregue productos</small>
+            </div>
+        </div>
+
+        <div class="carrito-total" id="carrito-totales" style="display: none;">
+            <div class="total-linea">
+                <span>Subtotal (IVA 0%):</span>
+                <span id="subtotal-sin-iva">$0.00</span>
+            </div>
+            <div class="total-linea">
+                <span>Subtotal (IVA 15%):</span>
+                <span id="subtotal-con-iva">$0.00</span>
+            </div>
+            <div class="total-linea total-final">
+                <span>TOTAL A PAGAR:</span>
+                <span id="total-pagar">$0.00</span>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button class="btn btn-success" style="width: 100%;" onclick="procesarFactura()">
+                Procesar Factura
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cantidad -->
+<div class="modal-overlay" id="modal-cantidad">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Agregar Producto</h3>
+            <button class="modal-close" onclick="cerrarModal()">&times;</button>
+        </div>
+        <p id="modal-producto-nombre"></p>
+        <p id="modal-producto-precio"></p>
+        <p id="modal-producto-stock"></p>
+        <div class="form-group">
+            <label class="form-label">Cantidad:</label>
+            <input type="number" class="form-control" id="modal-cantidad-input" min="1" value="1">
+        </div>
+        <button class="btn btn-success" onclick="confirmarAgregar()">Agregar al Carrito</button>
+    </div>
+</div>
+
+<input type="hidden" id="cliente-id" value="">
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let carrito = [];
+    let productoSeleccionado = null;
+
+    function buscarCliente() {
+        const cedula = document.getElementById('cliente-cedula').value;
+
+        if (cedula.length !== 10) {
+            toastr.warning('La cédula debe tener 10 dígitos');
+            return;
+        }
+
+        fetch(`/facturacion/buscar-cliente/?cedula=${cedula}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.encontrado) {
+                    mostrarCliente(data.cliente);
+                    document.getElementById('nuevo-cliente-form').style.display = 'none';
+                } else {
+                    document.getElementById('cliente-info').style.display = 'none';
+                    document.getElementById('nuevo-cliente-form').style.display = 'block';
+                    toastr.info('Cliente no encontrado. Puede registrarlo.');
+                }
+            });
+    }
+
+    function consumidorFinal() {
+        document.getElementById('cliente-cedula').value = '9999999999';
+        fetch('/facturacion/buscar-cliente/?cedula=9999999999')
+            .then(response => response.json())
+            .then(data => {
+                if (data.encontrado) {
+                    mostrarCliente(data.cliente);
+                    document.getElementById('nuevo-cliente-form').style.display = 'none';
+                }
+            });
+    }
+
+    function mostrarCliente(cliente) {
+        document.getElementById('cliente-id').value = cliente.id;
+        document.getElementById('cliente-nombre').textContent = `${cliente.nombre} ${cliente.apellido} (${cliente.cedula})`;
+        document.getElementById('cliente-celular').textContent = cliente.celular;
+        document.getElementById('cliente-correo').textContent = cliente.correo;
+        document.getElementById('cliente-info').style.display = 'block';
+        toastr.success('Cliente seleccionado');
+    }
+
+    function crearCliente() {
+        const cedula = document.getElementById('cliente-cedula').value;
+        const nombre = document.getElementById('nuevo-nombre').value;
+        const apellido = document.getElementById('nuevo-apellido').value;
+        const celular = document.getElementById('nuevo-celular').value;
+        const correo = document.getElementById('nuevo-correo').value;
+
+        if (!nombre || !apellido || !celular || !correo) {
+            toastr.warning('Complete todos los campos');
+            return;
+        }
+
+        fetch('/facturacion/crear-cliente/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ cedula, nombre, apellido, celular, correo })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                mostrarCliente(data.cliente);
+                document.getElementById('nuevo-cliente-form').style.display = 'none';
+                toastr.success('Cliente registrado exitosamente');
+            } else {
+                toastr.error(data.error);
+            }
+        });
+    }
+
+    function buscarProducto(query) {
+        if (query.length < 2) {
+            document.getElementById('resultados-busqueda').innerHTML =
+                '<p style="color: #7f8c8d; text-align: center;">Escriba para buscar productos...</p>';
+            return;
+        }
+
+        fetch(`/facturacion/buscar-producto/?q=${query}`)
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+                if (data.productos.length === 0) {
+                    html = '<p style="color: #7f8c8d; text-align: center;">No se encontraron productos</p>';
+                } else {
+                    data.productos.forEach(p => {
+                        const clasePN = p.es_primera_necesidad ? 'primera-necesidad' : '';
+                        html += `
+                            <div class="producto-item ${clasePN}" onclick="seleccionarProducto(${JSON.stringify(p).replace(/"/g, '&quot;')})">
+                                <div>
+                                    <strong>${p.nombre}</strong><br>
+                                    <small>${p.codigo} - ${p.marca}</small>
+                                </div>
+                                <div style="text-align: right;">
+                                    <strong>$${p.precio}</strong><br>
+                                    <small>Stock: ${p.stock} | <span class="iva-indicator ${p.es_primera_necesidad ? 'iva-0' : 'iva-15'}">${p.iva}</span></small>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                document.getElementById('resultados-busqueda').innerHTML = html;
+            });
+    }
+
+    function seleccionarProducto(producto) {
+        productoSeleccionado = producto;
+        document.getElementById('modal-producto-nombre').textContent = producto.nombre;
+        document.getElementById('modal-producto-precio').textContent = `Precio: $${producto.precio}`;
+        document.getElementById('modal-producto-stock').textContent = `Stock disponible: ${producto.stock}`;
+        document.getElementById('modal-cantidad-input').max = producto.stock;
+        document.getElementById('modal-cantidad-input').value = 1;
+        document.getElementById('modal-cantidad').classList.add('active');
+    }
+
+    function cerrarModal() {
+        document.getElementById('modal-cantidad').classList.remove('active');
+        productoSeleccionado = null;
+    }
+
+    function confirmarAgregar() {
+        const cantidad = parseInt(document.getElementById('modal-cantidad-input').value);
+
+        if (cantidad < 1 || cantidad > productoSeleccionado.stock) {
+            toastr.warning('Cantidad no válida');
+            return;
+        }
+
+        // Verificar si ya existe en el carrito
+        const existente = carrito.find(item => item.id === productoSeleccionado.id);
+        if (existente) {
+            if (existente.cantidad + cantidad > productoSeleccionado.stock) {
+                toastr.warning('No hay suficiente stock');
+                return;
+            }
+            existente.cantidad += cantidad;
+        } else {
+            carrito.push({
+                id: productoSeleccionado.id,
+                nombre: productoSeleccionado.nombre,
+                precio: parseFloat(productoSeleccionado.precio),
+                cantidad: cantidad,
+                stock: productoSeleccionado.stock,
+                es_primera_necesidad: productoSeleccionado.es_primera_necesidad
+            });
+        }
+
+        actualizarCarrito();
+        cerrarModal();
+        toastr.success('Producto agregado al carrito');
+    }
+
+    function actualizarCarrito() {
+        const container = document.getElementById('carrito-items');
+        const totalesDiv = document.getElementById('carrito-totales');
+
+        if (carrito.length === 0) {
+            container.innerHTML = `
+                <div class="carrito-vacio">
+                    <p>El carrito esta vacio</p>
+                    <small>Busque y agregue productos</small>
+                </div>
+            `;
+            totalesDiv.style.display = 'none';
+            return;
+        }
+
+        let html = '';
+        let subtotalSinIva = 0;
+        let subtotalConIva = 0;
+
+        carrito.forEach((item, index) => {
+            const totalLinea = item.precio * item.cantidad;
+
+            if (item.es_primera_necesidad) {
+                subtotalSinIva += totalLinea;
+            } else {
+                subtotalConIva += totalLinea;
+            }
+
+            html += `
+                <div class="carrito-item">
+                    <div>
+                        <strong>${item.nombre}</strong><br>
+                        <small>$${item.precio.toFixed(2)} x ${item.cantidad} = $${totalLinea.toFixed(2)}</small>
+                    </div>
+                    <div class="cantidad-control">
+                        <button class="cantidad-btn minus" onclick="cambiarCantidad(${index}, -1)">-</button>
+                        <span>${item.cantidad}</span>
+                        <button class="cantidad-btn plus" onclick="cambiarCantidad(${index}, 1)">+</button>
+                        <span class="remove-item" onclick="eliminarItem(${index})">X</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        // Calcular IVA y agregarlo al subtotal con IVA
+        const valorIva = subtotalConIva * 0.15;
+        const subtotalConIvaTotal = subtotalConIva + valorIva;  // Subtotal IVA 15% ya incluye el IVA
+        const total = subtotalSinIva + subtotalConIvaTotal;
+
+        document.getElementById('subtotal-sin-iva').textContent = `$${subtotalSinIva.toFixed(2)}`;
+        document.getElementById('subtotal-con-iva').textContent = `$${subtotalConIvaTotal.toFixed(2)}`;
+        document.getElementById('total-pagar').textContent = `$${total.toFixed(2)}`;
+
+        totalesDiv.style.display = 'block';
+    }
+
+    function cambiarCantidad(index, delta) {
+        const item = carrito[index];
+        const nuevaCantidad = item.cantidad + delta;
+
+        if (nuevaCantidad < 1) {
+            eliminarItem(index);
+            return;
+        }
+
+        if (nuevaCantidad > item.stock) {
+            toastr.warning('No hay suficiente stock');
+            return;
+        }
+
+        item.cantidad = nuevaCantidad;
+        actualizarCarrito();
+    }
+
+    function eliminarItem(index) {
+        carrito.splice(index, 1);
+        actualizarCarrito();
+        toastr.info('Producto eliminado del carrito');
+    }
+
+    function procesarFactura() {
+        const clienteId = document.getElementById('cliente-id').value;
+
+        if (!clienteId) {
+            toastr.warning('Seleccione un cliente primero');
+            return;
+        }
+
+        if (carrito.length === 0) {
+            toastr.warning('Agregue productos al carrito');
+            return;
+        }
+
+        const items = carrito.map(item => ({
+            producto_id: item.id,
+            cantidad: item.cantidad
+        }));
+
+        fetch('/facturacion/procesar/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                cliente_id: clienteId,
+                items: items
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                toastr.success(`Factura ${data.numero} creada exitosamente. Total: $${data.total}`);
+
+                // Preguntar si desea descargar
+                if (confirm(`¿Desea descargar la factura ${data.numero}?`)) {
+                    window.location.href = `/facturacion/descargar/${data.factura_id}/`;
+                }
+
+                // Limpiar carrito
+                carrito = [];
+                actualizarCarrito();
+                document.getElementById('cliente-id').value = '';
+                document.getElementById('cliente-cedula').value = '';
+                document.getElementById('cliente-info').style.display = 'none';
+                document.getElementById('buscar-producto').value = '';
+                document.getElementById('resultados-busqueda').innerHTML =
+                    '<p style="color: #7f8c8d; text-align: center;">Escriba para buscar productos...</p>';
+            } else {
+                toastr.error(data.error);
+            }
+        });
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ accion }} Empleado - Unimark{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <h1>{{ accion }} Empleado</h1>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="form-label" for="cedula">Cedula *</label>
+            <input type="text"
+                   class="form-control"
+                   id="cedula"
+                   name="cedula"
+                   value="{% if empleado %}{{ empleado.cedula }}{% endif %}"
+                   maxlength="10"
+                   pattern="\d{10}"
+                   title="La cedula debe tener 10 digitos"
+                   {% if empleado %}readonly{% endif %}
+                   required>
+        </div>
+
+        <div class="d-flex gap-2">
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" for="nombre">Nombre *</label>
+                <input type="text"
+                       class="form-control"
+                       id="nombre"
+                       name="nombre"
+                       value="{% if empleado %}{{ empleado.nombre }}{% endif %}"
+                       required>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" for="apellido">Apellido *</label>
+                <input type="text"
+                       class="form-control"
+                       id="apellido"
+                       name="apellido"
+                       value="{% if empleado %}{{ empleado.apellido }}{% endif %}"
+                       required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="celular">Número de Celular *</label>
+            <input type="tel"
+                   class="form-control"
+                   id="celular"
+                   name="celular"
+                   value="{% if empleado %}{{ empleado.celular }}{% endif %}"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="correo">Correo Electronico *</label>
+            <input type="email"
+                   class="form-control"
+                   id="correo"
+                   name="correo"
+                   value="{% if empleado %}{{ empleado.correo }}{% endif %}"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="cargo">Cargo *</label>
+            <select class="form-control" id="cargo" name="cargo" required>
+                {% for value, label in cargos %}
+                <option value="{{ value }}" {% if empleado and empleado.cargo == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        {% if not empleado %}
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" name="crear_usuario" id="crear_usuario">
+                Crear usuario del sistema (solo para cajeros)
+            </label>
+            <small style="display: block; color: #7f8c8d;">
+                La contrasena inicial sera la cedula del empleado.
+            </small>
+        </div>
+        {% endif %}
+
+        {% if empleado %}
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" name="activo" {% if empleado.activo %}checked{% endif %}>
+                Empleado Activo
+            </label>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-success">Guardar</button>
+            <a href="{% url 'lista_empleados' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

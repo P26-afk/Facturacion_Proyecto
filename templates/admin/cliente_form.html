@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Cliente - Unimark{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <h1>Editar Cliente</h1>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="form-label" for="cedula">Cedula</label>
+            <input type="text"
+                   class="form-control"
+                   id="cedula"
+                   value="{{ cliente.cedula }}"
+                   readonly
+                   disabled>
+            <small style="color: #7f8c8d;">La cedula no se puede modificar</small>
+        </div>
+
+        <div class="d-flex gap-2">
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" for="nombre">Nombre *</label>
+                <input type="text"
+                       class="form-control"
+                       id="nombre"
+                       name="nombre"
+                       value="{{ cliente.nombre }}"
+                       required>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" for="apellido">Apellido *</label>
+                <input type="text"
+                       class="form-control"
+                       id="apellido"
+                       name="apellido"
+                       value="{{ cliente.apellido }}"
+                       required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="celular">Numero de Celular *</label>
+            <input type="tel"
+                   class="form-control"
+                   id="celular"
+                   name="celular"
+                   value="{{ cliente.celular }}"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="correo">Correo Electronico *</label>
+            <input type="email"
+                   class="form-control"
+                   id="correo"
+                   name="correo"
+                   value="{{ cliente.correo }}"
+                   required>
+        </div>
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-success">Guardar Cambios</button>
+            <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

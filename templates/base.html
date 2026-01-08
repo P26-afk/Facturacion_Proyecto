@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Unimark{% endblock %}</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!-- Toastr CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block navbar %}
+    {% if user.is_authenticated %}
+    <nav class="navbar">
+        <a href="{% url 'dashboard' %}" class="navbar-brand">UNIMARK</a>
+        <ul class="navbar-nav">
+            {% if user.is_superuser or user.groups.all.0.name == 'Admin' %}
+            <li><a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a></li>
+            <li><a href="{% url 'lista_empleados' %}" class="nav-link {% if 'empleado' in request.path %}active{% endif %}">Empleados</a></li>
+            <li><a href="{% url 'lista_productos' %}" class="nav-link {% if 'producto' in request.path %}active{% endif %}">Productos</a></li>
+            <li><a href="{% url 'lista_clientes' %}" class="nav-link {% if 'cliente' in request.path %}active{% endif %}">Clientes</a></li>
+            {% endif %}
+            {% if user.groups.all.0.name == 'Cajero' or user.is_superuser %}
+            <li><a href="{% url 'facturacion' %}" class="nav-link {% if 'facturacion' in request.path %}active{% endif %}">Facturacion</a></li>
+            <li><a href="{% url 'historial_facturas' %}" class="nav-link {% if 'historial' in request.path %}active{% endif %}">Historial</a></li>
+            {% endif %}
+            <li><a href="{% url 'logout' %}" class="nav-link">Salir ({{ user.username }})</a></li>
+        </ul>
+    </nav>
+    {% endif %}
+    {% endblock %}
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+    <script>
+        // Configuracion de Toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "timeOut": "3000"
+        };
+
+        // Mostrar mensajes de Django
+        {% if messages %}
+            {% for message in messages %}
+                {% if message.tags == 'success' %}
+                    toastr.success("{{ message }}");
+                {% elif message.tags == 'error' %}
+                    toastr.error("{{ message }}");
+                {% elif message.tags == 'warning' %}
+                    toastr.warning("{{ message }}");
+                {% else %}
+                    toastr.info("{{ message }}");
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Unimark{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <h1>Dashboard Administrativo</h1>
+    <p>Bienvenido al panel de administracion de Unimark</p>
+</div>
+
+<div class="dashboard-grid">
+    <div class="stat-card">
+        <h3>{{ total_empleados }}</h3>
+        <p>Empleados Activos</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ total_productos }}</h3>
+        <p>Productos</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ total_clientes }}</h3>
+        <p>Clientes</p>
+    </div>
+    <div class="stat-card">
+        <h3>{{ total_facturas }}</h3>
+        <p>Facturas Emitidas</p>
+    </div>
+</div>
+
+<div class="d-flex gap-2">
+    <div class="card" style="flex: 1;">
+        <div class="card-header">
+            <h2 class="card-title">Productos con Bajo Stock</h2>
+        </div>
+        {% if productos_bajo_stock %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Codigo</th>
+                    <th>Producto</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for producto in productos_bajo_stock %}
+                <tr>
+                    <td>{{ producto.codigo }}</td>
+                    <td>{{ producto.nombre }}</td>
+                    <td>
+                        <span class="badge {% if producto.stock == 0 %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ producto.stock }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #27ae60;">Todos los productos tienen stock suficiente.</p>
+        {% endif %}
+    </div>
+
+    <div class="card" style="flex: 1;">
+        <div class="card-header">
+            <h2 class="card-title">Ultimas Facturas</h2>
+        </div>
+        {% if ultimas_facturas %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Numero</th>
+                    <th>Cliente</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for factura in ultimas_facturas %}
+                <tr>
+                    <td>{{ factura.numero }}</td>
+                    <td>{{ factura.cliente }}</td>
+                    <td>${{ factura.total }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #7f8c8d;">No hay facturas emitidas aún.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header">
+        <h2 class="card-title">Accesos Rapidos</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Nuevo Empleado</a>
+        <a href="{% url 'crear_producto' %}" class="btn btn-success">Nuevo Producto</a>
+        <a href="{% url 'historial_facturas' %}" class="btn btn-secondary">Ver Facturas</a>
+    </div>
+</div>
+{% endblock %}
+

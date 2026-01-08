@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion de Empleados - Unimark{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-3">
+    <h1>Gestion de Empleados</h1>
+    <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Nuevo Empleado</a>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Cedula</th>
+                <th>Nombre</th>
+                <th>Cargo</th>
+                <th>Celular</th>
+                <th>Correo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for empleado in empleados %}
+            <tr>
+                <td>{{ empleado.cedula }}</td>
+                <td>{{ empleado.nombre_completo }}</td>
+                <td>{{ empleado.get_cargo_display }}</td>
+                <td>{{ empleado.celular }}</td>
+                <td>{{ empleado.correo }}</td>
+                <td>
+                    {% if empleado.activo %}
+                    <span class="badge badge-success">Activo</span>
+                    {% else %}
+                    <span class="badge badge-danger">Inactivo</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'editar_empleado' empleado.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                    {% if empleado.activo %}
+                    <a href="{% url 'eliminar_empleado' empleado.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Esta seguro de desactivar este empleado?')">Eliminar</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No hay empleados registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

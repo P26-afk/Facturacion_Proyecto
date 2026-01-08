@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Facturas - Unimark{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-between align-center mb-3">
+    <h1>Historial de Facturas</h1>
+    <a href="{% url 'facturacion' %}" class="btn btn-primary">Nueva Factura</a>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>N° Factura</th>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Empleado</th>
+                <th>Subtotal (0%)</th>
+                <th>Subtotal (15%)</th>
+                <th>Total</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for factura in facturas %}
+            <tr>
+                <td><strong>{{ factura.numero }}</strong></td>
+                <td>{{ factura.fecha|date:"d/m/Y H:i" }}</td>
+                <td>{{ factura.cliente }}</td>
+                <td>{{ factura.empleado.nombre_completo }}</td>
+                <td>${{ factura.subtotal_sin_iva }}</td>
+                <td>${{ factura.subtotal_con_iva }}</td>
+                <td><strong>${{ factura.total }}</strong></td>
+                <td>
+                    <a href="{% url 'detalle_factura' factura.pk %}" class="btn btn-primary btn-sm">Ver</a>
+                    <a href="{% url 'descargar_factura' factura.pk %}" class="btn btn-success btn-sm">Descargar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center">No hay facturas emitidas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

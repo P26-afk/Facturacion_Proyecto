@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ accion }} Producto - Unimark{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <h1>{{ accion }} Producto</h1>
+</div>
+
+<div class="card" style="max-width: 600px;">
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label class="form-label" for="codigo">Codigo Unico *</label>
+            <input type="text"
+                   class="form-control"
+                   id="codigo"
+                   name="codigo"
+                   value="{% if producto %}{{ producto.codigo }}{% endif %}"
+                   {% if producto %}readonly{% endif %}
+                   placeholder="Ej: ARR001"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="nombre">Nombre del Producto *</label>
+            <input type="text"
+                   class="form-control"
+                   id="nombre"
+                   name="nombre"
+                   value="{% if producto %}{{ producto.nombre }}{% endif %}"
+                   required>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="descripcion">Descripción *</label>
+            <textarea class="form-control"
+                      id="descripcion"
+                      name="descripcion"
+                      rows="3"
+                      required>{% if producto %}{{ producto.descripcion }}{% endif %}</textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="marca">Marca *</label>
+            <input type="text"
+                   class="form-control"
+                   id="marca"
+                   name="marca"
+                   value="{% if producto %}{{ producto.marca }}{% endif %}"
+                   required>
+        </div>
+
+        <div class="d-flex gap-2">
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" for="precio_unitario">Precio Unitario ($) *</label>
+                <input type="number"
+                       class="form-control"
+                       id="precio_unitario"
+                       name="precio_unitario"
+                       value="{% if producto %}{{ producto.precio_unitario }}{% endif %}"
+                       step="0.01"
+                       min="0.01"
+                       required>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label class="form-label" for="stock">Stock *</label>
+                <input type="number"
+                       class="form-control"
+                       id="stock"
+                       name="stock"
+                       value="{% if producto %}{{ producto.stock }}{% else %}0{% endif %}"
+                       min="0"
+                       required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox"
+                       name="es_primera_necesidad"
+                       {% if producto and producto.es_primera_necesidad %}checked{% endif %}>
+                Es Producto de Primera Necesidad (IVA 0%)
+            </label>
+            <small style="display: block; color: #7f8c8d;">
+                Productos como: arroz, pan, leche, huevos, aceite, azucar, sal, harina, legumbres,
+                frutas, verduras, carnes, pollo, pescado, agua, medicinas.
+            </small>
+        </div>
+
+        {% if producto %}
+        <div class="form-group">
+            <label class="form-label">
+                <input type="checkbox" name="activo" {% if producto.activo %}checked{% endif %}>
+                Producto Activo
+            </label>
+        </div>
+        {% endif %}
+
+        <div class="d-flex gap-2 mt-3">
+            <button type="submit" class="btn btn-success">Guardar</button>
+            <a href="{% url 'lista_productos' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
