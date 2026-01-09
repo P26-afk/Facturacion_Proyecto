@@ -5,13 +5,11 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from decimal import Decimal
 
-# Validador para cédula ecuatoriana (10 dígitos)
 cedula_validator = RegexValidator(
     regex=r'^\d{10}$',
-    message='La cédula debe tener exactamente 10 dígitos numéricos.'
+    message='La cedula debe tener exactamente 10 digitos numericos.'
 )
 
-# Lista de categorías de productos de primera necesidad (IVA 0% en Ecuador)
 CATEGORIAS_PRIMERA_NECESIDAD = [
     'arroz', 'pan', 'leche', 'huevos', 'aceite', 'azucar', 'sal', 'harina',
     'legumbres', 'frejol', 'lenteja', 'frutas', 'verduras', 'carne', 'pollo',
@@ -20,17 +18,16 @@ CATEGORIAS_PRIMERA_NECESIDAD = [
 
 
 class Persona(models.Model):
-    """Clase base abstracta para Empleado y Cliente usando POO"""
     cedula = models.CharField(
         max_length=10,
         unique=True,
         validators=[cedula_validator],
-        verbose_name='Cédula'
+        verbose_name='Cedula'
     )
     nombre = models.CharField(max_length=100, verbose_name='Nombre')
     apellido = models.CharField(max_length=100, verbose_name='Apellido')
-    celular = models.CharField(max_length=15, verbose_name='Número de Celular')
-    correo = models.EmailField(verbose_name='Correo Electrónico')
+    celular = models.CharField(max_length=15, verbose_name='Numero de Celular')
+    correo = models.EmailField(verbose_name='Correo Electronico')
 
     class Meta:
         abstract = True
@@ -44,7 +41,6 @@ class Persona(models.Model):
 
 
 class Empleado(Persona):
-    """Modelo Empleado que hereda de Persona"""
     CARGO_CHOICES = [
         ('cajero', 'Cajero'),
         ('perchero', 'Perchero'),
@@ -77,7 +73,6 @@ class Empleado(Persona):
 
 
 class Cliente(Persona):
-    """Modelo Cliente que hereda de Persona"""
     es_consumidor_final = models.BooleanField(
         default=False,
         verbose_name='Es Consumidor Final'
@@ -96,7 +91,6 @@ class Cliente(Persona):
 
     @classmethod
     def get_consumidor_final(cls):
-        """Obtiene o crea el cliente consumidor final"""
         cliente, created = cls.objects.get_or_create(
             cedula='9999999999',
             defaults={
@@ -111,14 +105,13 @@ class Cliente(Persona):
 
 
 class Producto(models.Model):
-    """Modelo para productos del inventario"""
     codigo = models.CharField(
         max_length=20,
         unique=True,
-        verbose_name='Código Único'
+        verbose_name='Codigo Unico'
     )
     nombre = models.CharField(max_length=200, verbose_name='Nombre del Producto')
-    descripcion = models.TextField(max_length=500, verbose_name='Descripción')
+    descripcion = models.TextField(max_length=500, verbose_name='Descripcion')
     marca = models.CharField(max_length=100, verbose_name='Marca')
     precio_unitario = models.DecimalField(
         max_digits=10,
@@ -149,19 +142,16 @@ class Producto(models.Model):
 
     @property
     def iva_porcentaje(self):
-        """Retorna 0 si es primera necesidad, 15 si no"""
         return Decimal('0') if self.es_primera_necesidad else Decimal('0.15')
 
     def calcular_precio_con_iva(self, cantidad=1):
-        """Calcula el precio total incluyendo IVA"""
         subtotal = self.precio_unitario * cantidad
         iva = subtotal * self.iva_porcentaje
         return subtotal + iva
 
 
 class Factura(models.Model):
-    """Modelo para las facturas"""
-    numero = models.CharField(max_length=20, unique=True, verbose_name='Número de Factura')
+    numero = models.CharField(max_length=20, unique=True, verbose_name='Numero de Factura')
     cliente = models.ForeignKey(
         Cliente,
         on_delete=models.PROTECT,
@@ -172,7 +162,7 @@ class Factura(models.Model):
         on_delete=models.PROTECT,
         verbose_name='Empleado que factura'
     )
-    fecha = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Emisión')
+    fecha = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Emision')
     subtotal_sin_iva = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -208,7 +198,6 @@ class Factura(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.numero:
-            # Generar número de factura automático
             ultima = Factura.objects.order_by('-id').first()
             if ultima:
                 ultimo_num = int(ultima.numero.split('-')[1])
@@ -218,7 +207,6 @@ class Factura(models.Model):
         super().save(*args, **kwargs)
 
     def calcular_totales(self):
-        """Recalcula todos los totales de la factura"""
         detalles = self.detalles.all()
 
         self.subtotal_sin_iva = Decimal('0.00')
@@ -230,15 +218,13 @@ class Factura(models.Model):
             else:
                 self.subtotal_con_iva += detalle.total_linea
 
-        # El subtotal_con_iva incluye el IVA 15% calculado
         self.valor_iva = self.subtotal_con_iva * Decimal('0.15')
-        self.subtotal_con_iva = self.subtotal_con_iva + self.valor_iva  # Ya incluye IVA
+        self.subtotal_con_iva = self.subtotal_con_iva + self.valor_iva
         self.total = self.subtotal_sin_iva + self.subtotal_con_iva
         self.save()
 
 
 class DetalleFactura(models.Model):
-    """Modelo para los detalles/líneas de una factura"""
     factura = models.ForeignKey(
         Factura,
         on_delete=models.CASCADE,
@@ -273,15 +259,12 @@ class DetalleFactura(models.Model):
         return f"{self.producto.nombre} x {self.cantidad}"
 
     def save(self, *args, **kwargs):
-        # Calcular total de línea
         self.total_linea = self.precio_unitario * self.cantidad
         super().save(*args, **kwargs)
 
 
-# Signals para manejar el stock
 @receiver(post_save, sender=DetalleFactura)
 def reducir_stock(sender, instance, created, **kwargs):
-    """Reduce el stock del producto cuando se crea un detalle de factura"""
     if created:
         producto = instance.producto
         producto.stock -= instance.cantidad
@@ -290,7 +273,6 @@ def reducir_stock(sender, instance, created, **kwargs):
 
 @receiver(post_delete, sender=DetalleFactura)
 def restaurar_stock(sender, instance, **kwargs):
-    """Restaura el stock si se elimina un detalle de factura"""
     producto = instance.producto
     producto.stock += instance.cantidad
     producto.save()

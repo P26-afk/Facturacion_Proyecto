@@ -11,27 +11,21 @@ import json
 import textwrap
 from .models import Empleado, Cliente, Producto, Factura, DetalleFactura
 
-# Nombre y mensaje del local
 NOMBRE_LOCAL = "UNIMARK"
-MENSAJE_LOCAL = ("En Unimark encontrarás productos de calidad a precios "
-                 "justos y atención rápida y amable. Visítanos hoy y descubre "
-                 "por qué nuestros clientes confían en nosotros.")
+MENSAJE_LOCAL = ("En Unimark encontraras productos de calidad a precios "
+                 "justos y atencion rapida y amable. Visitanos hoy y descubre "
+                 "por que nuestros clientes confian en nosotros.")
 
 
 def es_admin(user):
-    """Verifica si el usuario es administrador"""
     return user.groups.filter(name='Admin').exists() or user.is_superuser
 
 
 def es_cajero(user):
-    """Verifica si el usuario es cajero"""
     return user.groups.filter(name='Cajero').exists()
 
 
-# ==================== AUTENTICACIÓN ====================
-
 def login_view(request):
-    """Vista de login"""
     if request.user.is_authenticated:
         return redirect('dashboard')
 
@@ -42,17 +36,16 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
-            messages.success(request, f'¡Bienvenido {user.username}!')
+            messages.success(request, f'Bienvenido {user.username}!')
             return redirect('dashboard')
         else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
+            messages.error(request, 'Usuario o contrasena incorrectos.')
 
     return render(request, 'login.html')
 
 
 @login_required
 def logout_view(request):
-    """Vista de logout"""
     logout(request)
     messages.info(request, 'Has cerrado sesion correctamente.')
     return redirect('login')
@@ -60,9 +53,7 @@ def logout_view(request):
 
 @login_required
 def dashboard(request):
-    """Dashboard principal - redirige segun rol"""
     if es_admin(request.user):
-        # Obtener estadisticas del dia
         from django.utils import timezone
         from django.db.models import Sum
         hoy = timezone.now().date()
@@ -72,7 +63,6 @@ def dashboard(request):
         facturas_hoy = facturas_hoy_qs.count()
         clientes_hoy = facturas_hoy_qs.values('cliente').distinct().count()
 
-        # Dashboard Admin
         context = {
             'total_empleados': Empleado.objects.filter(activo=True).count(),
             'total_productos': Producto.objects.filter(activo=True).count(),
@@ -93,13 +83,12 @@ def dashboard(request):
         return redirect('login')
 
 
-# ==================== GESTIÓN DE EMPLEADOS (ADMIN) ====================
+# Empleados
 
 @login_required
 def lista_empleados(request):
-    """Lista todos los empleados"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     empleados = Empleado.objects.all()
@@ -108,9 +97,8 @@ def lista_empleados(request):
 
 @login_required
 def crear_empleado(request):
-    """Crear nuevo empleado"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     if request.method == 'POST':
@@ -123,14 +111,12 @@ def crear_empleado(request):
             cargo = request.POST.get('cargo')
             crear_usuario = request.POST.get('crear_usuario') == 'on'
 
-            # Validar cédula
             if len(cedula) != 10 or not cedula.isdigit():
-                messages.error(request, 'La cédula debe tener exactamente 10 dígitos.')
+                messages.error(request, 'La cedula debe tener exactamente 10 digitos.')
                 return redirect('crear_empleado')
 
-            # Verificar si ya existe
             if Empleado.objects.filter(cedula=cedula).exists():
-                messages.error(request, 'Ya existe un empleado con esta cédula.')
+                messages.error(request, 'Ya existe un empleado con esta cedula.')
                 return redirect('crear_empleado')
 
             empleado = Empleado.objects.create(
@@ -142,19 +128,18 @@ def crear_empleado(request):
                 cargo=cargo
             )
 
-            # Crear usuario si es necesario
             if crear_usuario and cargo == 'cajero':
                 username = f"{nombre.lower()}.{apellido.lower()}"
                 user = User.objects.create_user(
                     username=username,
                     email=correo,
-                    password=cedula  # Contraseña inicial es la cédula
+                    password=cedula
                 )
                 grupo_cajero, _ = Group.objects.get_or_create(name='Cajero')
                 user.groups.add(grupo_cajero)
                 empleado.usuario = user
                 empleado.save()
-                messages.info(request, f'Usuario creado: {username} (contraseña: cédula)')
+                messages.info(request, f'Usuario creado: {username} (contrasena: cedula)')
 
             messages.success(request, 'Empleado creado exitosamente.')
             return redirect('lista_empleados')
@@ -170,9 +155,8 @@ def crear_empleado(request):
 
 @login_required
 def editar_empleado(request, pk):
-    """Editar empleado existente"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     empleado = get_object_or_404(Empleado, pk=pk)
@@ -202,9 +186,8 @@ def editar_empleado(request, pk):
 
 @login_required
 def eliminar_empleado(request, pk):
-    """Eliminar empleado (desactivar)"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     empleado = get_object_or_404(Empleado, pk=pk)
@@ -219,13 +202,12 @@ def eliminar_empleado(request, pk):
     return redirect('lista_empleados')
 
 
-# ==================== GESTIÓN DE PRODUCTOS (ADMIN) ====================
+# Productos
 
 @login_required
 def lista_productos(request):
-    """Lista todos los productos"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     productos = Producto.objects.all()
@@ -234,9 +216,8 @@ def lista_productos(request):
 
 @login_required
 def crear_producto(request):
-    """Crear nuevo producto"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     if request.method == 'POST':
@@ -250,7 +231,7 @@ def crear_producto(request):
             es_primera_necesidad = request.POST.get('es_primera_necesidad') == 'on'
 
             if Producto.objects.filter(codigo=codigo).exists():
-                messages.error(request, 'Ya existe un producto con este código.')
+                messages.error(request, 'Ya existe un producto con este codigo.')
                 return redirect('crear_producto')
 
             Producto.objects.create(
@@ -274,9 +255,8 @@ def crear_producto(request):
 
 @login_required
 def editar_producto(request, pk):
-    """Editar producto existente"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     producto = get_object_or_404(Producto, pk=pk)
@@ -306,9 +286,8 @@ def editar_producto(request, pk):
 
 @login_required
 def eliminar_producto(request, pk):
-    """Eliminar producto (desactivar)"""
     if not es_admin(request.user):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     producto = get_object_or_404(Producto, pk=pk)
@@ -319,11 +298,10 @@ def eliminar_producto(request, pk):
     return redirect('lista_productos')
 
 
-# ==================== GESTION DE CLIENTES ====================
+# Clientes
 
 @login_required
 def lista_clientes(request):
-    """Lista todos los clientes - Solo Admin puede ver"""
     if not es_admin(request.user):
         messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
@@ -334,7 +312,6 @@ def lista_clientes(request):
 
 @login_required
 def editar_cliente(request, pk):
-    """Editar cliente existente - Solo Admin puede editar"""
     if not es_admin(request.user):
         messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
@@ -363,14 +340,12 @@ def editar_cliente(request, pk):
 
 @login_required
 def eliminar_cliente(request, pk):
-    """Eliminar cliente"""
     if not es_admin(request.user):
         messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     cliente = get_object_or_404(Cliente, pk=pk)
 
-    # No permitir eliminar consumidor final
     if cliente.es_consumidor_final:
         messages.error(request, 'No se puede eliminar el Consumidor Final.')
         return redirect('lista_clientes')
@@ -380,13 +355,12 @@ def eliminar_cliente(request, pk):
     return redirect('lista_clientes')
 
 
-# ==================== FACTURACIÓN (CAJERO) ====================
+# Facturacion
 
 @login_required
 def facturacion(request):
-    """Vista principal de facturación"""
     if not (es_cajero(request.user) or es_admin(request.user)):
-        messages.error(request, 'No tienes permisos para esta acción.')
+        messages.error(request, 'No tienes permisos para esta accion.')
         return redirect('dashboard')
 
     productos = Producto.objects.filter(activo=True, stock__gt=0)
@@ -399,7 +373,6 @@ def facturacion(request):
 @login_required
 @require_GET
 def buscar_producto(request):
-    """Buscar producto por nombre o código (AJAX)"""
     query = request.GET.get('q', '')
     if len(query) < 2:
         return JsonResponse({'productos': []})
@@ -427,7 +400,6 @@ def buscar_producto(request):
 @login_required
 @require_GET
 def buscar_cliente(request):
-    """Buscar cliente por cédula (AJAX)"""
     cedula = request.GET.get('cedula', '')
 
     if cedula == '9999999999':
@@ -466,8 +438,6 @@ def buscar_cliente(request):
 @login_required
 @require_POST
 def crear_cliente(request):
-    """Crear nuevo cliente (AJAX) - SOLO disponible para Cajeros"""
-    # Verificar permisos - Solo cajeros pueden crear clientes
     if not es_cajero(request.user):
         return JsonResponse({
             'success': False,
@@ -478,7 +448,6 @@ def crear_cliente(request):
         data = json.loads(request.body)
         cedula = data.get('cedula')
 
-        # Validar cedula
         if len(cedula) != 10 or not cedula.isdigit():
             return JsonResponse({
                 'success': False,
@@ -517,7 +486,6 @@ def crear_cliente(request):
 @login_required
 @require_POST
 def procesar_factura(request):
-    """Procesar y crear factura"""
     try:
         data = json.loads(request.body)
         cliente_id = data.get('cliente_id')
@@ -531,30 +499,25 @@ def procesar_factura(request):
 
         cliente = get_object_or_404(Cliente, pk=cliente_id)
 
-        # Obtener empleado del usuario actual
         try:
             empleado = Empleado.objects.get(usuario=request.user)
         except Empleado.DoesNotExist:
-            # Si es admin sin empleado, crear uno temporal
             empleado = Empleado.objects.filter(cargo='administrativo').first()
             if not empleado:
                 return JsonResponse({
                     'success': False,
-                    'error': 'No se encontró empleado asociado.'
+                    'error': 'No se encontro empleado asociado.'
                 })
 
-        # Crear factura
         factura = Factura.objects.create(
             cliente=cliente,
             empleado=empleado
         )
 
-        # Crear detalles
         for item in items:
             producto = get_object_or_404(Producto, pk=item['producto_id'])
             cantidad = int(item['cantidad'])
 
-            # Verificar stock
             if producto.stock < cantidad:
                 factura.delete()
                 return JsonResponse({
@@ -569,7 +532,6 @@ def procesar_factura(request):
                 precio_unitario=producto.precio_unitario
             )
 
-        # Recalcular totales
         factura.calcular_totales()
 
         return JsonResponse({
@@ -585,10 +547,8 @@ def procesar_factura(request):
 
 @login_required
 def descargar_factura(request, pk):
-    """Generar y descargar factura en TXT"""
     factura = get_object_or_404(Factura, pk=pk)
 
-    # Generar contenido del TXT
     linea = "=" * 50
     linea_simple = "-" * 50
 
@@ -597,23 +557,21 @@ def descargar_factura(request, pk):
 {"UNIMARK":^50}
 {linea}
 
-FACTURA N°: {factura.numero}
+FACTURA N: {factura.numero}
 FECHA: {factura.fecha.strftime('%d/%m/%Y %H:%M')}
 
 {linea_simple}
 DATOS DEL CLIENTE
 {linea_simple}
-Cédula: {factura.cliente.cedula}
+Cedula: {factura.cliente.cedula}
 Nombre: {factura.cliente.nombre_completo}
-Teléfono: {factura.cliente.celular}
+Telefono: {factura.cliente.celular}
 Correo: {factura.cliente.correo}
 
 {linea_simple}
 """
 
-    # Formatear el mensaje del local para que quede simétrico en ancho fijo
     width = len(linea)
-    # No romper palabras largas ni usar guiones para mantener palabras completas
     mensaje_lineas = textwrap.wrap(MENSAJE_LOCAL, width=width, break_long_words=False, break_on_hyphens=False)
     mensaje_formateado = "\n".join([ml.center(width) for ml in mensaje_lineas]) + "\n"
 
@@ -638,7 +596,7 @@ Correo: {factura.cliente.correo}
 
 Atendido por: {factura.empleado.nombre_completo}
 
-¡Gracias por su compra!
+Gracias por su compra!
 Vuelva pronto a UNIMARK
 """
 
@@ -649,14 +607,12 @@ Vuelva pronto a UNIMARK
 
 @login_required
 def historial_facturas(request):
-    """Historial de facturas"""
     facturas = Factura.objects.all().order_by('-fecha')
     return render(request, 'cajero/historial.html', {'facturas': facturas})
 
 
 @login_required
 def detalle_factura(request, pk):
-    """Ver detalle de una factura"""
     factura = get_object_or_404(Factura, pk=pk)
     return render(request, 'cajero/detalle_factura.html', {
         'factura': factura,

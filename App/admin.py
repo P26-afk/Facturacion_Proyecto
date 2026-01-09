@@ -39,16 +39,12 @@ class FacturaAdmin(admin.ModelAdmin):
     readonly_fields = ['numero', 'subtotal_sin_iva', 'subtotal_con_iva', 'valor_iva', 'total']
 
 
-# Función para crear datos iniciales
 def crear_datos_iniciales():
-    """Crear datos de prueba para el sistema"""
     from decimal import Decimal
 
-    # Crear grupos
     grupo_admin, _ = Group.objects.get_or_create(name='Admin')
     grupo_cajero, _ = Group.objects.get_or_create(name='Cajero')
 
-    # Crear usuario admin si no existe
     if not User.objects.filter(username='admin').exists():
         admin_user = User.objects.create_superuser(
             username='admin',
@@ -57,7 +53,6 @@ def crear_datos_iniciales():
         )
         admin_user.groups.add(grupo_admin)
 
-    # Crear usuario cajero si no existe
     if not User.objects.filter(username='cajero').exists():
         cajero_user = User.objects.create_user(
             username='cajero',
@@ -66,7 +61,6 @@ def crear_datos_iniciales():
         )
         cajero_user.groups.add(grupo_cajero)
 
-    # Crear empleados
     empleados_data = [
         {
             'cedula': '1712345678',
@@ -78,8 +72,8 @@ def crear_datos_iniciales():
         },
         {
             'cedula': '1723456789',
-            'nombre': 'María',
-            'apellido': 'García',
+            'nombre': 'Maria',
+            'apellido': 'Garcia',
             'celular': '0982345678',
             'correo': 'maria.garcia@unimark.com',
             'cargo': 'cajero'
@@ -97,22 +91,20 @@ def crear_datos_iniciales():
                 except User.DoesNotExist:
                     pass
 
-    # Crear cliente consumidor final
     Cliente.get_consumidor_final()
 
-    # Crear algunos clientes de prueba
     clientes_data = [
         {
             'cedula': '1701234567',
             'nombre': 'Juan',
-            'apellido': 'Pérez',
+            'apellido': 'Perez',
             'celular': '0998765432',
             'correo': 'juan.perez@email.com'
         },
         {
             'cedula': '1709876543',
             'nombre': 'Ana',
-            'apellido': 'López',
+            'apellido': 'Lopez',
             'celular': '0987654321',
             'correo': 'ana.lopez@email.com'
         },
@@ -122,9 +114,7 @@ def crear_datos_iniciales():
         if not Cliente.objects.filter(cedula=cli_data['cedula']).exists():
             Cliente.objects.create(**cli_data)
 
-    # Crear productos (5 primera necesidad IVA 0%, 5 con IVA 15%)
     productos_data = [
-        # Primera necesidad (IVA 0%)
         {
             'codigo': 'ARR001',
             'nombre': 'Arroz Conejo 1kg',
@@ -164,13 +154,12 @@ def crear_datos_iniciales():
         {
             'codigo': 'ACE001',
             'nombre': 'Aceite La Favorita 1L',
-            'descripcion': 'Aceite vegetal de palma, ideal para freír',
+            'descripcion': 'Aceite vegetal de palma, ideal para freir',
             'marca': 'La Favorita',
             'precio_unitario': Decimal('2.75'),
             'stock': 60,
             'es_primera_necesidad': True
         },
-        # Con IVA 15%
         {
             'codigo': 'GAL001',
             'nombre': 'Galletas Oreo x6',
@@ -191,8 +180,8 @@ def crear_datos_iniciales():
         },
         {
             'codigo': 'JAB001',
-            'nombre': 'Jabón Dove Original',
-            'descripcion': 'Jabón de tocador con crema humectante, barra de 90g',
+            'nombre': 'Jabon Dove Original',
+            'descripcion': 'Jabon de tocador con crema humectante, barra de 90g',
             'marca': 'Dove',
             'precio_unitario': Decimal('1.20'),
             'stock': 70,
@@ -210,7 +199,7 @@ def crear_datos_iniciales():
         {
             'codigo': 'CHO001',
             'nombre': 'Chocolate Jet 50g',
-            'descripcion': 'Barra de chocolate con leche, tamaño personal',
+            'descripcion': 'Barra de chocolate con leche, tamano personal',
             'marca': 'Jet',
             'precio_unitario': Decimal('0.75'),
             'stock': 90,
