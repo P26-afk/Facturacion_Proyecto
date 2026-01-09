@@ -2,54 +2,150 @@
 
 {% block title %}Clientes - Unimark{% endblock %}
 
+{% block extra_css %}
+<style>
+    .gestion-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .cliente-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-color);
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        gap: 1.5rem;
+        align-items: center;
+        transition: var(--transition);
+    }
+
+    .cliente-card:hover {
+        box-shadow: var(--shadow-sm);
+        border-color: var(--secondary-color);
+    }
+
+    .cliente-card.consumidor-final {
+        background: linear-gradient(90deg, rgba(52,152,219,0.05), white);
+        border-left: 4px solid var(--secondary-color);
+    }
+
+    .cliente-avatar {
+        width: 50px;
+        height: 50px;
+        background: var(--warning-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .cliente-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .cliente-nombre {
+        font-weight: 600;
+        color: var(--dark-text);
+    }
+
+    .cliente-meta {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        display: flex;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-between align-center mb-3">
-    <h1>Gestion de Clientes</h1>
-    <span class="badge badge-info">Solo los cajeros pueden crear nuevos clientes</span>
+<div class="gestion-header">
+    <div>
+        <h1>Gestion de Clientes</h1>
+        <p class="text-muted">Registro de clientes de Unimark ({{ clientes|length }} clientes)</p>
+    </div>
+    <span class="badge badge-info">Los cajeros pueden crear nuevos clientes durante la facturacion</span>
 </div>
 
 <div class="card">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Cedula</th>
-                <th>Nombre</th>
-                <th>Celular</th>
-                <th>Correo</th>
-                <th>Tipo</th>
-                <th>Fecha Registro</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cliente in clientes %}
-            <tr>
-                <td>{{ cliente.cedula }}</td>
-                <td>{{ cliente.nombre_completo }}</td>
-                <td>{{ cliente.celular }}</td>
-                <td>{{ cliente.correo }}</td>
-                <td>
-                    {% if cliente.es_consumidor_final %}
-                    <span class="badge badge-info">Consumidor Final</span>
-                    {% else %}
-                    <span class="badge badge-success">Registrado</span>
-                    {% endif %}
-                </td>
-                <td>{{ cliente.fecha_registro|date:"d/m/Y H:i" }}</td>
-                <td>
-                    <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-warning btn-sm">Editar</a>
-                    {% if not cliente.es_consumidor_final %}
-                    <a href="{% url 'eliminar_cliente' cliente.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Esta seguro de eliminar este cliente?')">Eliminar</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center">No hay clientes registrados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card-header">
+        <h3 class="card-title">Lista de Clientes</h3>
+        <input type="text" placeholder="Buscar cliente..." class="form-control" style="max-width: 250px;" id="buscar-cliente" onkeyup="filtrarClientes()">
+    </div>
+
+    <div id="lista-clientes">
+        {% for cliente in clientes %}
+        <div class="cliente-card {% if cliente.es_consumidor_final %}consumidor-final{% endif %}" data-nombre="{{ cliente.nombre_completo|lower }}" data-cedula="{{ cliente.cedula }}">
+            <div class="cliente-avatar">
+                {% if cliente.es_consumidor_final %}
+                CF
+                {% else %}
+                {{ cliente.nombre|slice:":1" }}{{ cliente.apellido|slice:":1" }}
+                {% endif %}
+            </div>
+            <div class="cliente-info">
+                <span class="cliente-nombre">{{ cliente.nombre_completo }}</span>
+                <div class="cliente-meta">
+                    <span>{{ cliente.cedula }}</span>
+                    <span>{{ cliente.celular }}</span>
+                    <span>{{ cliente.correo }}</span>
+                </div>
+            </div>
+            <div>
+                {% if cliente.es_consumidor_final %}
+                <span class="badge badge-info">Consumidor Final</span>
+                {% else %}
+                <span class="badge badge-success">Cliente Registrado</span>
+                {% endif %}
+                <span class="text-muted text-sm">{{ cliente.fecha_registro|date:"d/m/Y" }}</span>
+            </div>
+            <div class="d-flex gap-1">
+                <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                {% if not cliente.es_consumidor_final %}
+                <a href="{% url 'eliminar_cliente' cliente.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Eliminar este cliente?')">Eliminar</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center p-3">
+            <p class="text-muted">No hay clientes registrados.</p>
+            <p>Los clientes se registran desde el modulo de facturacion.</p>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filtrarClientes() {
+        const busqueda = document.getElementById('buscar-cliente').value.toLowerCase();
+        const clientes = document.querySelectorAll('.cliente-card');
+
+        clientes.forEach(cliente => {
+            const nombre = cliente.dataset.nombre;
+            const cedula = cliente.dataset.cedula;
+
+            if (nombre.includes(busqueda) || cedula.includes(busqueda)) {
+                cliente.style.display = 'grid';
+            } else {
+                cliente.style.display = 'none';
+            }
+        });
+    }
+</script>
 {% endblock %}
 

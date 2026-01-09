@@ -3,9 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Unimark</title>
+    <title>Iniciar Sesion - Unimark</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1a252f 0%, #2c3e50 50%, #3498db 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: "";
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            top: -100px;
+            right: -100px;
+        }
+
+        .login-container::after {
+            content: "";
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+            bottom: -50px;
+            left: -50px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 420px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-logo h1 {
+            color: #1a252f;
+            font-size: 2.8rem;
+            letter-spacing: 4px;
+            margin-bottom: 0.5rem;
+            position: relative;
+            display: inline-block;
+        }
+
+        .login-logo h1::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #3498db, #27ae60);
+            border-radius: 2px;
+        }
+
+        .login-logo p {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+            outline: none;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 1rem;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .login-footer {
+            margin-top: 2rem;
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e0e6ed;
+        }
+
+        .login-footer p {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .login-features {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .feature {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 0.75rem;
+        }
+
+        .feature span {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
@@ -25,26 +180,41 @@
                            id="username"
                            name="username"
                            placeholder="Ingrese su usuario"
-                           required>
+                           required
+                           autofocus>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label" for="password">Contraseña</label>
+                    <label class="form-label" for="password">Contrasena</label>
                     <input type="password"
                            class="form-control"
                            id="password"
                            name="password"
-                           placeholder="Ingrese su contraseña"
+                           placeholder="Ingrese su contrasena"
                            required>
                 </div>
 
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
-                    Iniciar Sesión
+                <button type="submit" class="btn-login">
+                    Iniciar Sesion
                 </button>
             </form>
 
-            <div style="margin-top: 2rem; text-align: center; color: #7f8c8d; font-size: 0.85rem;">
-                <p>En Unimark encontrarás productos de calidad a precios justos.</p>
+            <div class="login-footer">
+                <p>En Unimark encontraras productos de calidad<br>a precios justos y atencion amable.</p>
+                <div class="login-features">
+                    <div class="feature">
+                        <span>$</span>
+                        Facturacion
+                    </div>
+                    <div class="feature">
+                        <span>@</span>
+                        Clientes
+                    </div>
+                    <div class="feature">
+                        <span>#</span>
+                        Inventario
+                    </div>
+                </div>
             </div>
         </div>
     </div>

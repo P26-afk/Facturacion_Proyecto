@@ -2,75 +2,274 @@
 
 {% block title %}Gestion de Productos - Unimark{% endblock %}
 
+{% block extra_css %}
+<style>
+    .gestion-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .gestion-header h1 {
+        margin: 0;
+        color: var(--primary-color);
+    }
+
+    .filtros-productos {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filtro-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        background: white;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .filtro-btn:hover, .filtro-btn.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .producto-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .producto-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+    }
+
+    .producto-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-3px);
+    }
+
+    .producto-card.primera-necesidad {
+        border-left: 4px solid var(--success-color);
+    }
+
+    .producto-card.inactivo {
+        opacity: 0.6;
+        background: #f9f9f9;
+    }
+
+    .producto-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+    }
+
+    .producto-codigo {
+        font-family: monospace;
+        font-size: 0.8rem;
+        color: #7f8c8d;
+        background: var(--light-bg);
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .producto-nombre {
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--dark-text);
+        margin-bottom: 0.25rem;
+    }
+
+    .producto-marca {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+    }
+
+    .producto-precio-stock {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 1rem 0;
+        padding: 0.75rem;
+        background: var(--light-bg);
+        border-radius: var(--radius-sm);
+    }
+
+    .producto-precio {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--secondary-color);
+    }
+
+    .producto-stock {
+        text-align: right;
+    }
+
+    .producto-stock .label {
+        font-size: 0.7rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+    }
+
+    .producto-stock .valor {
+        font-weight: 700;
+    }
+
+    .producto-stock .valor.agotado { color: var(--danger-color); }
+    .producto-stock .valor.bajo { color: var(--warning-color); }
+    .producto-stock .valor.ok { color: var(--success-color); }
+
+    .producto-acciones {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .producto-acciones .btn {
+        flex: 1;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-between align-center mb-3">
-    <h1>Gestion de Productos</h1>
-    <a href="{% url 'crear_producto' %}" class="btn btn-primary">Nuevo Producto</a>
+<div class="gestion-header">
+    <div>
+        <h1>Gestion de Productos</h1>
+        <p class="text-muted">Administra el inventario de Unimark</p>
+    </div>
+    <a href="{% url 'crear_producto' %}" class="btn btn-success">+ Nuevo Producto</a>
 </div>
 
 <div class="card">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Codigo</th>
-                <th>Nombre</th>
-                <th>Marca</th>
-                <th>Precio</th>
-                <th>Stock</th>
-                <th>IVA</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for producto in productos %}
-            <tr class="{% if producto.es_primera_necesidad %}primera-necesidad{% endif %}">
-                <td>{{ producto.codigo }}</td>
-                <td>{{ producto.nombre }}</td>
-                <td>{{ producto.marca }}</td>
-                <td>${{ producto.precio_unitario }}</td>
-                <td>
-                    {% if producto.stock == 0 %}
-                    <span class="badge badge-danger">Agotado</span>
-                    {% elif producto.stock <= 5 %}
-                    <span class="badge badge-warning">{{ producto.stock }}</span>
-                    {% else %}
-                    <span class="badge badge-success">{{ producto.stock }}</span>
-                    {% endif %}
-                </td>
-                <td>
+    <div class="card-header">
+        <h3 class="card-title">Inventario ({{ productos|length }} productos)</h3>
+        <input type="text" placeholder="Buscar producto..." class="form-control" style="max-width: 250px;" id="buscar-producto" onkeyup="filtrarProductos()">
+    </div>
+
+    <div class="filtros-productos">
+        <button class="filtro-btn active" onclick="filtrarPorTipo('todos')">Todos</button>
+        <button class="filtro-btn" onclick="filtrarPorTipo('iva0')">IVA 0%</button>
+        <button class="filtro-btn" onclick="filtrarPorTipo('iva15')">IVA 15%</button>
+        <button class="filtro-btn" onclick="filtrarPorTipo('bajo')">Stock Bajo</button>
+        <button class="filtro-btn" onclick="filtrarPorTipo('agotado')">Agotados</button>
+    </div>
+
+    <div class="producto-grid" id="lista-productos">
+        {% for producto in productos %}
+        <div class="producto-card {% if producto.es_primera_necesidad %}primera-necesidad{% endif %} {% if not producto.activo %}inactivo{% endif %}"
+             data-nombre="{{ producto.nombre|lower }}"
+             data-codigo="{{ producto.codigo|lower }}"
+             data-iva="{{ producto.es_primera_necesidad|yesno:'0,15' }}"
+             data-stock="{{ producto.stock }}">
+            <div class="producto-card-header">
+                <span class="producto-codigo">{{ producto.codigo }}</span>
+                <div>
                     {% if producto.es_primera_necesidad %}
-                    <span class="iva-indicator iva-0">0%</span>
+                    <span class="iva-badge iva-0">IVA 0%</span>
                     {% else %}
-                    <span class="iva-indicator iva-15">15%</span>
+                    <span class="iva-badge iva-15">IVA 15%</span>
                     {% endif %}
-                </td>
-                <td>
-                    {% if producto.activo %}
-                    <span class="badge badge-success">Activo</span>
-                    {% else %}
-                    <span class="badge badge-danger">Inactivo</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'editar_producto' producto.pk %}" class="btn btn-warning btn-sm">Editar</a>
-                    {% if producto.activo %}
-                    <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Esta seguro de desactivar este producto?')">Eliminar</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" class="text-center">No hay productos registrados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+
+            <div class="producto-nombre">{{ producto.nombre }}</div>
+            <div class="producto-marca">{{ producto.marca }}</div>
+
+            <div class="producto-precio-stock">
+                <div class="producto-precio">${{ producto.precio_unitario }}</div>
+                <div class="producto-stock">
+                    <div class="label">Stock</div>
+                    <div class="valor {% if producto.stock == 0 %}agotado{% elif producto.stock <= 5 %}bajo{% else %}ok{% endif %}">
+                        {{ producto.stock }} unid.
+                    </div>
+                </div>
+            </div>
+
+            <div class="producto-acciones">
+                <a href="{% url 'editar_producto' producto.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                {% if producto.activo %}
+                <a href="{% url 'eliminar_producto' producto.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Desactivar este producto?')">Desactivar</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center p-3" style="grid-column: 1/-1;">
+            <p class="text-muted">No hay productos registrados.</p>
+            <a href="{% url 'crear_producto' %}" class="btn btn-success">Crear primer producto</a>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 
-<div class="card mt-3">
-    <p><span class="iva-indicator iva-0">IVA 0%</span> = Producto de primera necesidad (resaltado en verde)</p>
-    <p><span class="iva-indicator iva-15">IVA 15%</span> = Producto con IVA</p>
+<div class="card mt-2">
+    <div class="d-flex gap-2">
+        <span><span class="iva-badge iva-0">IVA 0%</span> = Producto de primera necesidad</span>
+        <span><span class="iva-badge iva-15">IVA 15%</span> = Producto con IVA</span>
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filtrarProductos() {
+        const busqueda = document.getElementById('buscar-producto').value.toLowerCase();
+        const productos = document.querySelectorAll('.producto-card');
+
+        productos.forEach(producto => {
+            const nombre = producto.dataset.nombre;
+            const codigo = producto.dataset.codigo;
+
+            if (nombre.includes(busqueda) || codigo.includes(busqueda)) {
+                producto.style.display = 'block';
+            } else {
+                producto.style.display = 'none';
+            }
+        });
+    }
+
+    function filtrarPorTipo(tipo) {
+        const productos = document.querySelectorAll('.producto-card');
+        const botones = document.querySelectorAll('.filtro-btn');
+
+        botones.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        productos.forEach(producto => {
+            const iva = producto.dataset.iva;
+            const stock = parseInt(producto.dataset.stock);
+
+            let mostrar = true;
+
+            switch(tipo) {
+                case 'iva0':
+                    mostrar = iva === '0';
+                    break;
+                case 'iva15':
+                    mostrar = iva === '15';
+                    break;
+                case 'bajo':
+                    mostrar = stock > 0 && stock <= 5;
+                    break;
+                case 'agotado':
+                    mostrar = stock === 0;
+                    break;
+            }
+
+            producto.style.display = mostrar ? 'block' : 'none';
+        });
+    }
+</script>
 {% endblock %}
 

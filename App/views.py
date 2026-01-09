@@ -54,22 +54,35 @@ def login_view(request):
 def logout_view(request):
     """Vista de logout"""
     logout(request)
-    messages.info(request, 'Has cerrado sesión correctamente.')
+    messages.info(request, 'Has cerrado sesion correctamente.')
     return redirect('login')
 
 
 @login_required
 def dashboard(request):
-    """Dashboard principal - redirige según rol"""
+    """Dashboard principal - redirige segun rol"""
     if es_admin(request.user):
+        # Obtener estadisticas del dia
+        from django.utils import timezone
+        from django.db.models import Sum
+        hoy = timezone.now().date()
+
+        facturas_hoy_qs = Factura.objects.filter(fecha__date=hoy)
+        ventas_hoy = facturas_hoy_qs.aggregate(total=Sum('total'))['total'] or Decimal('0.00')
+        facturas_hoy = facturas_hoy_qs.count()
+        clientes_hoy = facturas_hoy_qs.values('cliente').distinct().count()
+
         # Dashboard Admin
         context = {
             'total_empleados': Empleado.objects.filter(activo=True).count(),
             'total_productos': Producto.objects.filter(activo=True).count(),
             'total_clientes': Cliente.objects.count(),
             'total_facturas': Factura.objects.count(),
-            'productos_bajo_stock': Producto.objects.filter(stock__lte=5, activo=True),
-            'ultimas_facturas': Factura.objects.all()[:5],
+            'productos_bajo_stock': Producto.objects.filter(stock__lte=5, activo=True)[:10],
+            'ultimas_facturas': Factura.objects.all().order_by('-fecha')[:5],
+            'ventas_hoy': ventas_hoy,
+            'facturas_hoy': facturas_hoy,
+            'clientes_hoy': clientes_hoy,
             'es_admin': True,
         }
         return render(request, 'admin/dashboard.html', context)

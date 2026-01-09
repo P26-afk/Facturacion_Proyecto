@@ -4,45 +4,107 @@
 
 {% block extra_css %}
 <style>
+    .detalle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .detalle-header h1 {
+        margin: 0;
+        color: var(--primary-color);
+    }
+
+    .detalle-header .numero {
+        font-family: monospace;
+        background: var(--primary-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+        font-size: 1.1rem;
+    }
+
     .factura-preview {
-        max-width: 600px;
+        max-width: 700px;
         margin: 0 auto;
         background: white;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 2.5rem;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
     }
 
     .factura-header {
         text-align: center;
-        border-bottom: 2px dashed #333;
-        padding-bottom: 1rem;
-        margin-bottom: 1rem;
+        border-bottom: 3px double var(--primary-color);
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
     }
 
     .factura-header h1 {
-        font-size: 2rem;
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        letter-spacing: 3px;
         margin-bottom: 0.5rem;
+    }
+
+    .factura-header .factura-numero {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        color: white;
+        padding: 0.5rem 1.5rem;
+        border-radius: 20px;
+        display: inline-block;
+        font-weight: 600;
+        margin: 0.5rem 0;
+    }
+
+    .factura-header .factura-fecha {
+        color: #7f8c8d;
+        font-size: 0.9rem;
     }
 
     .factura-info {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid #ddd;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .factura-info h4 {
+        color: var(--primary-color);
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .factura-info p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
     }
 
     .factura-mensaje {
-        background: #f8f9fa;
-        padding: 1rem;
-        border-radius: 5px;
-        margin-bottom: 1rem;
+        background: linear-gradient(135deg, rgba(52,152,219,0.1), rgba(39,174,96,0.1));
+        padding: 1.25rem;
+        border-radius: var(--radius-sm);
+        margin-bottom: 1.5rem;
         text-align: center;
         font-style: italic;
         color: #555;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        line-height: 1.6;
+        border-left: 4px solid var(--secondary-color);
+    }
+
+    .factura-items {
+        margin-bottom: 1.5rem;
     }
 
     .factura-items table {
@@ -52,73 +114,125 @@
 
     .factura-items th,
     .factura-items td {
-        padding: 0.5rem;
+        padding: 0.75rem;
         text-align: left;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid var(--border-color);
     }
 
     .factura-items th {
-        background: #f0f0f0;
+        background: var(--light-bg);
+        color: var(--primary-color);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .factura-items tbody tr:hover {
+        background: rgba(52,152,219,0.05);
+    }
+
+    .iva-indicator {
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .iva-indicator.iva-0 {
+        background: rgba(39,174,96,0.2);
+        color: var(--success-color);
+    }
+
+    .iva-indicator.iva-15 {
+        background: rgba(243,156,18,0.2);
+        color: var(--warning-color);
     }
 
     .factura-totales {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 2px solid #333;
+        margin-top: 1.5rem;
+        padding: 1.5rem;
+        background: var(--light-bg);
+        border-radius: var(--radius-sm);
     }
 
     .factura-totales .linea {
         display: flex;
         justify-content: space-between;
-        padding: 0.25rem 0;
+        padding: 0.5rem 0;
+        font-size: 0.95rem;
+    }
+
+    .factura-totales .linea.iva-0 {
+        color: var(--success-color);
+    }
+
+    .factura-totales .linea.iva-15 {
+        color: var(--warning-color);
     }
 
     .factura-totales .total-final {
-        font-size: 1.25rem;
-        font-weight: bold;
-        border-top: 1px solid #333;
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        border-top: 2px dashed var(--border-color);
+        margin-top: 0.75rem;
+        padding-top: 1rem;
     }
 
     .factura-footer {
         text-align: center;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 2px dashed #333;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 3px double var(--primary-color);
         color: #666;
+    }
+
+    .factura-footer p:first-child {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+
+    .acciones-factura {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-between align-center mb-3">
-    <h1>Detalle de Factura</h1>
+<div class="detalle-header">
     <div>
+        <h1>Detalle de Factura</h1>
+        <p class="text-muted">Visualiza los detalles de la compra realizada</p>
+    </div>
+    <div class="d-flex gap-1">
         <a href="{% url 'descargar_factura' factura.pk %}" class="btn btn-success">Descargar TXT</a>
-        <a href="{% url 'historial_facturas' %}" class="btn btn-secondary">Volver</a>
+        <a href="{% url 'historial_facturas' %}" class="btn btn-secondary">Volver al Historial</a>
     </div>
 </div>
 
 <div class="factura-preview">
     <div class="factura-header">
         <h1>{{ nombre_local }}</h1>
-        <p>Factura N: <strong>{{ factura.numero }}</strong></p>
-        <p>Fecha: {{ factura.fecha|date:"d/m/Y H:i" }}</p>
+        <span class="factura-numero">Factura N: {{ factura.numero }}</span>
+        <p class="factura-fecha">{{ factura.fecha|date:"d/m/Y H:i" }}</p>
     </div>
 
     <div class="factura-info">
         <div>
             <h4>Datos del Cliente</h4>
-            <p><strong>Cédula:</strong> {{ factura.cliente.cedula }}</p>
+            <p><strong>Cedula:</strong> {{ factura.cliente.cedula }}</p>
             <p><strong>Nombre:</strong> {{ factura.cliente.nombre_completo }}</p>
-            <p><strong>Teléfono:</strong> {{ factura.cliente.celular }}</p>
+            <p><strong>Telefono:</strong> {{ factura.cliente.celular }}</p>
             <p><strong>Correo:</strong> {{ factura.cliente.correo }}</p>
         </div>
         <div>
             <h4>Atendido por</h4>
-            <p>{{ factura.empleado.nombre_completo }}</p>
-            <p><small>{{ factura.empleado.get_cargo_display }}</small></p>
+            <p><strong>{{ factura.empleado.nombre_completo }}</strong></p>
+            <p>{{ factura.empleado.get_cargo_display }}</p>
         </div>
     </div>
 
@@ -158,11 +272,11 @@
     </div>
 
     <div class="factura-totales">
-        <div class="linea">
+        <div class="linea iva-0">
             <span>Subtotal (IVA 0%):</span>
             <span>${{ factura.subtotal_sin_iva }}</span>
         </div>
-        <div class="linea">
+        <div class="linea iva-15">
             <span>Subtotal (IVA 15%):</span>
             <span>${{ factura.subtotal_con_iva }}</span>
         </div>
@@ -173,9 +287,14 @@
     </div>
 
     <div class="factura-footer">
-        <p>¡Gracias por su compra!</p>
+        <p>Gracias por su compra!</p>
         <p>Vuelva pronto a {{ nombre_local }}</p>
     </div>
+</div>
+
+<div class="acciones-factura">
+    <a href="{% url 'facturacion' %}" class="btn btn-primary">Nueva Factura</a>
+    <a href="{% url 'historial_facturas' %}" class="btn btn-secondary">Ver Historial</a>
 </div>
 {% endblock %}
 

@@ -2,48 +2,174 @@
 
 {% block title %}Historial de Facturas - Unimark{% endblock %}
 
+{% block extra_css %}
+<style>
+    .historial-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .filtros {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .filtros input, .filtros select {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+    }
+
+    .factura-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        gap: 1.5rem;
+        align-items: center;
+    }
+
+    .factura-card:hover {
+        box-shadow: var(--shadow-md);
+        border-color: var(--secondary-color);
+    }
+
+    .factura-numero {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-sm);
+        font-family: monospace;
+        font-size: 0.9rem;
+    }
+
+    .factura-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .factura-cliente {
+        font-weight: 600;
+        color: var(--dark-text);
+    }
+
+    .factura-meta {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+    }
+
+    .factura-totales {
+        text-align: right;
+    }
+
+    .factura-total-valor {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--success-color);
+    }
+
+    .factura-subtotales {
+        font-size: 0.75rem;
+        color: #7f8c8d;
+    }
+
+    .factura-acciones {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .factura-card {
+            grid-template-columns: 1fr;
+            text-align: center;
+        }
+
+        .factura-totales {
+            text-align: center;
+        }
+
+        .factura-acciones {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-between align-center mb-3">
-    <h1>Historial de Facturas</h1>
-    <a href="{% url 'facturacion' %}" class="btn btn-primary">Nueva Factura</a>
+<div class="historial-header">
+    <div>
+        <h1>Historial de Facturas</h1>
+        <p class="text-muted">{{ facturas|length }} factura{{ facturas|length|pluralize:"s" }} encontrada{{ facturas|length|pluralize:"s" }}</p>
+    </div>
+    <div class="filtros">
+        <input type="text" placeholder="Buscar por numero o cliente..." id="buscar-factura" onkeyup="filtrarFacturas()">
+        <a href="{% url 'facturacion' %}" class="btn btn-success">+ Nueva Factura</a>
+    </div>
 </div>
 
-<div class="card">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>N° Factura</th>
-                <th>Fecha</th>
-                <th>Cliente</th>
-                <th>Empleado</th>
-                <th>Subtotal (0%)</th>
-                <th>Subtotal (15%)</th>
-                <th>Total</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for factura in facturas %}
-            <tr>
-                <td><strong>{{ factura.numero }}</strong></td>
-                <td>{{ factura.fecha|date:"d/m/Y H:i" }}</td>
-                <td>{{ factura.cliente }}</td>
-                <td>{{ factura.empleado.nombre_completo }}</td>
-                <td>${{ factura.subtotal_sin_iva }}</td>
-                <td>${{ factura.subtotal_con_iva }}</td>
-                <td><strong>${{ factura.total }}</strong></td>
-                <td>
-                    <a href="{% url 'detalle_factura' factura.pk %}" class="btn btn-primary btn-sm">Ver</a>
-                    <a href="{% url 'descargar_factura' factura.pk %}" class="btn btn-success btn-sm">Descargar</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="8" class="text-center">No hay facturas emitidas.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div id="lista-facturas">
+    {% for factura in facturas %}
+    <div class="factura-card" data-numero="{{ factura.numero }}" data-cliente="{{ factura.cliente }}">
+        <div class="factura-numero">{{ factura.numero }}</div>
+        <div class="factura-info">
+            <span class="factura-cliente">{{ factura.cliente }}</span>
+            <span class="factura-meta">
+                {{ factura.fecha|date:"d/m/Y H:i" }} | Atendido por: {{ factura.empleado.nombre_completo }}
+            </span>
+        </div>
+        <div class="factura-totales">
+            <div class="factura-total-valor">${{ factura.total }}</div>
+            <div class="factura-subtotales">
+                IVA 0%: ${{ factura.subtotal_sin_iva }} | IVA 15%: ${{ factura.subtotal_con_iva }}
+            </div>
+        </div>
+        <div class="factura-acciones">
+            <a href="{% url 'detalle_factura' factura.pk %}" class="btn btn-primary btn-sm">Ver Detalle</a>
+            <a href="{% url 'descargar_factura' factura.pk %}" class="btn btn-success btn-sm">Descargar</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card text-center p-3">
+        <div class="carrito-vacio">
+            <div class="icon" style="font-size: 4rem; opacity: 0.2;">#</div>
+            <h3>No hay facturas emitidas</h3>
+            <p class="text-muted">Comience creando su primera factura</p>
+            <a href="{% url 'facturacion' %}" class="btn btn-success mt-2">Crear Factura</a>
+        </div>
+    </div>
+    {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filtrarFacturas() {
+        const busqueda = document.getElementById('buscar-factura').value.toLowerCase();
+        const facturas = document.querySelectorAll('.factura-card');
+
+        facturas.forEach(factura => {
+            const numero = factura.dataset.numero.toLowerCase();
+            const cliente = factura.dataset.cliente.toLowerCase();
+
+            if (numero.includes(busqueda) || cliente.includes(busqueda)) {
+                factura.style.display = 'grid';
+            } else {
+                factura.style.display = 'none';
+            }
+        });
+    }
+</script>
 {% endblock %}
 

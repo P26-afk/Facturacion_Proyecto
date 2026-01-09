@@ -3,34 +3,68 @@
 {% block title %}Dashboard - Unimark{% endblock %}
 
 {% block content %}
-<div class="mb-3">
-    <h1>Dashboard Administrativo</h1>
-    <p>Bienvenido al panel de administracion de Unimark</p>
+<!-- Header del Dashboard -->
+<div class="dashboard-header">
+    <h1>Panel de Administracion</h1>
+    <p>Bienvenido, {{ user.username }}. Aqui tienes el resumen de Unimark.</p>
 </div>
 
+<!-- Resumen del Dia -->
+{% if ventas_hoy is not None %}
+<div class="resumen-dia">
+    <h4>Resumen del Dia</h4>
+    <div class="stats-row">
+        <div class="stat-item">
+            <div class="valor">${{ ventas_hoy|default:"0.00" }}</div>
+            <div class="label">Ventas Hoy</div>
+        </div>
+        <div class="stat-item">
+            <div class="valor">{{ facturas_hoy|default:"0" }}</div>
+            <div class="label">Facturas Hoy</div>
+        </div>
+        <div class="stat-item">
+            <div class="valor">{{ clientes_hoy|default:"0" }}</div>
+            <div class="label">Clientes Atendidos</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Alerta de Stock Bajo -->
+{% if productos_bajo_stock %}
+<div class="stock-alerta">
+    <h4>Alerta: Productos con stock bajo</h4>
+    <span class="count">{{ productos_bajo_stock|length }} productos</span>
+</div>
+{% endif %}
+
+<!-- Estadisticas Principales -->
 <div class="dashboard-grid">
-    <div class="stat-card">
+    <div class="stat-card empleados">
         <h3>{{ total_empleados }}</h3>
         <p>Empleados Activos</p>
     </div>
-    <div class="stat-card">
+    <div class="stat-card productos">
         <h3>{{ total_productos }}</h3>
         <p>Productos</p>
     </div>
-    <div class="stat-card">
+    <div class="stat-card clientes">
         <h3>{{ total_clientes }}</h3>
-        <p>Clientes</p>
+        <p>Clientes Registrados</p>
     </div>
-    <div class="stat-card">
+    <div class="stat-card facturas">
         <h3>{{ total_facturas }}</h3>
         <p>Facturas Emitidas</p>
     </div>
 </div>
 
+<!-- Contenido Principal en dos columnas -->
 <div class="d-flex gap-2">
+    <!-- Productos con Bajo Stock -->
     <div class="card" style="flex: 1;">
         <div class="card-header">
             <h2 class="card-title">Productos con Bajo Stock</h2>
+            <a href="{% url 'lista_productos' %}" class="btn btn-sm btn-primary">Ver todos</a>
         </div>
         {% if productos_bajo_stock %}
         <table class="table">
@@ -39,30 +73,42 @@
                     <th>Codigo</th>
                     <th>Producto</th>
                     <th>Stock</th>
+                    <th>Estado</th>
                 </tr>
             </thead>
             <tbody>
                 {% for producto in productos_bajo_stock %}
                 <tr>
-                    <td>{{ producto.codigo }}</td>
+                    <td><code>{{ producto.codigo }}</code></td>
                     <td>{{ producto.nombre }}</td>
                     <td>
                         <span class="badge {% if producto.stock == 0 %}badge-danger{% else %}badge-warning{% endif %}">
-                            {{ producto.stock }}
+                            {{ producto.stock }} unidades
                         </span>
+                    </td>
+                    <td>
+                        {% if producto.stock == 0 %}
+                        <span class="text-danger font-bold">AGOTADO</span>
+                        {% else %}
+                        <span class="text-warning">Bajo</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p style="color: #27ae60;">Todos los productos tienen stock suficiente.</p>
+        <div class="alert alert-success">
+            <strong>Excelente:</strong> Todos los productos tienen stock suficiente.
+        </div>
         {% endif %}
     </div>
 
+    <!-- Ultimas Facturas -->
     <div class="card" style="flex: 1;">
         <div class="card-header">
             <h2 class="card-title">Ultimas Facturas</h2>
+            <a href="{% url 'historial_facturas' %}" class="btn btn-sm btn-primary">Ver historial</a>
         </div>
         {% if ultimas_facturas %}
         <table class="table">
@@ -71,32 +117,51 @@
                     <th>Numero</th>
                     <th>Cliente</th>
                     <th>Total</th>
+                    <th>Fecha</th>
                 </tr>
             </thead>
             <tbody>
                 {% for factura in ultimas_facturas %}
                 <tr>
-                    <td>{{ factura.numero }}</td>
+                    <td><code>{{ factura.numero }}</code></td>
                     <td>{{ factura.cliente }}</td>
-                    <td>${{ factura.total }}</td>
+                    <td class="text-success font-bold">${{ factura.total }}</td>
+                    <td class="text-muted text-sm">{{ factura.fecha|date:"d/m/Y" }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         {% else %}
-        <p style="color: #7f8c8d;">No hay facturas emitidas aún.</p>
+        <div class="text-center p-3">
+            <p class="text-muted">No hay facturas emitidas aun.</p>
+            <a href="{% url 'facturacion' %}" class="btn btn-success">Crear primera factura</a>
+        </div>
         {% endif %}
     </div>
 </div>
 
+<!-- Acciones Rapidas -->
 <div class="card mt-3">
     <div class="card-header">
-        <h2 class="card-title">Accesos Rapidos</h2>
+        <h2 class="card-title">Acciones Rapidas</h2>
     </div>
-    <div class="d-flex gap-2">
-        <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Nuevo Empleado</a>
-        <a href="{% url 'crear_producto' %}" class="btn btn-success">Nuevo Producto</a>
-        <a href="{% url 'historial_facturas' %}" class="btn btn-secondary">Ver Facturas</a>
+    <div class="acciones-rapidas">
+        <a href="{% url 'crear_empleado' %}" class="accion-btn">
+            <span class="icono">+</span>
+            <span>Nuevo Empleado</span>
+        </a>
+        <a href="{% url 'crear_producto' %}" class="accion-btn">
+            <span class="icono">+</span>
+            <span>Nuevo Producto</span>
+        </a>
+        <a href="{% url 'lista_clientes' %}" class="accion-btn">
+            <span class="icono">@</span>
+            <span>Ver Clientes</span>
+        </a>
+        <a href="{% url 'historial_facturas' %}" class="accion-btn">
+            <span class="icono">#</span>
+            <span>Historial Facturas</span>
+        </a>
     </div>
 </div>
 {% endblock %}

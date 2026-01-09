@@ -2,54 +2,191 @@
 
 {% block title %}Gestion de Empleados - Unimark{% endblock %}
 
+{% block extra_css %}
+<style>
+    .gestion-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: var(--radius-md);
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .gestion-header h1 {
+        margin: 0;
+        color: var(--primary-color);
+    }
+
+    .gestion-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .stat-mini {
+        text-align: center;
+    }
+
+    .stat-mini .valor {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+    }
+
+    .stat-mini .label {
+        font-size: 0.75rem;
+        color: #7f8c8d;
+        text-transform: uppercase;
+    }
+
+    .empleado-card {
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.75rem;
+        border: 1px solid var(--border-color);
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        gap: 1.5rem;
+        align-items: center;
+        transition: var(--transition);
+    }
+
+    .empleado-card:hover {
+        box-shadow: var(--shadow-sm);
+        border-color: var(--secondary-color);
+    }
+
+    .empleado-card.inactivo {
+        opacity: 0.6;
+        background: #f9f9f9;
+    }
+
+    .empleado-avatar {
+        width: 50px;
+        height: 50px;
+        background: var(--secondary-color);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .empleado-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .empleado-nombre {
+        font-weight: 600;
+        color: var(--dark-text);
+    }
+
+    .empleado-meta {
+        font-size: 0.85rem;
+        color: #7f8c8d;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .empleado-cargo {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        background: var(--light-bg);
+        color: var(--dark-text);
+    }
+
+    .cargo-cajero { background: rgba(52,152,219,0.2); color: #2980b9; }
+    .cargo-administrativo { background: rgba(155,89,182,0.2); color: #8e44ad; }
+    .cargo-seguridad { background: rgba(231,76,60,0.2); color: #c0392b; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-between align-center mb-3">
-    <h1>Gestion de Empleados</h1>
-    <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Nuevo Empleado</a>
+<div class="gestion-header">
+    <div>
+        <h1>Gestion de Empleados</h1>
+        <p class="text-muted">Administra el personal de Unimark</p>
+    </div>
+    <div class="d-flex gap-1 align-center">
+        <div class="gestion-stats">
+            <div class="stat-mini">
+                <div class="valor">{{ empleados|length }}</div>
+                <div class="label">Total</div>
+            </div>
+        </div>
+        <a href="{% url 'crear_empleado' %}" class="btn btn-primary">+ Nuevo Empleado</a>
+    </div>
 </div>
 
 <div class="card">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Cedula</th>
-                <th>Nombre</th>
-                <th>Cargo</th>
-                <th>Celular</th>
-                <th>Correo</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for empleado in empleados %}
-            <tr>
-                <td>{{ empleado.cedula }}</td>
-                <td>{{ empleado.nombre_completo }}</td>
-                <td>{{ empleado.get_cargo_display }}</td>
-                <td>{{ empleado.celular }}</td>
-                <td>{{ empleado.correo }}</td>
-                <td>
-                    {% if empleado.activo %}
-                    <span class="badge badge-success">Activo</span>
-                    {% else %}
-                    <span class="badge badge-danger">Inactivo</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'editar_empleado' empleado.pk %}" class="btn btn-warning btn-sm">Editar</a>
-                    {% if empleado.activo %}
-                    <a href="{% url 'eliminar_empleado' empleado.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Esta seguro de desactivar este empleado?')">Eliminar</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="7" class="text-center">No hay empleados registrados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="card-header">
+        <h3 class="card-title">Lista de Empleados</h3>
+        <input type="text" placeholder="Buscar empleado..." class="form-control" style="max-width: 250px;" id="buscar-empleado" onkeyup="filtrarEmpleados()">
+    </div>
+
+    <div id="lista-empleados">
+        {% for empleado in empleados %}
+        <div class="empleado-card {% if not empleado.activo %}inactivo{% endif %}" data-nombre="{{ empleado.nombre_completo|lower }}" data-cedula="{{ empleado.cedula }}">
+            <div class="empleado-avatar">{{ empleado.nombre|slice:":1" }}{{ empleado.apellido|slice:":1" }}</div>
+            <div class="empleado-info">
+                <span class="empleado-nombre">{{ empleado.nombre_completo }}</span>
+                <div class="empleado-meta">
+                    <span>{{ empleado.cedula }}</span>
+                    <span>{{ empleado.celular }}</span>
+                    <span>{{ empleado.correo }}</span>
+                </div>
+            </div>
+            <div>
+                <span class="empleado-cargo cargo-{{ empleado.cargo }}">{{ empleado.get_cargo_display }}</span>
+                {% if empleado.activo %}
+                <span class="badge badge-success">Activo</span>
+                {% else %}
+                <span class="badge badge-danger">Inactivo</span>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-1">
+                <a href="{% url 'editar_empleado' empleado.pk %}" class="btn btn-warning btn-sm">Editar</a>
+                {% if empleado.activo %}
+                <a href="{% url 'eliminar_empleado' empleado.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Esta seguro de desactivar este empleado?')">Desactivar</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center p-3">
+            <p class="text-muted">No hay empleados registrados.</p>
+            <a href="{% url 'crear_empleado' %}" class="btn btn-primary">Crear primer empleado</a>
+        </div>
+        {% endfor %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filtrarEmpleados() {
+        const busqueda = document.getElementById('buscar-empleado').value.toLowerCase();
+        const empleados = document.querySelectorAll('.empleado-card');
+
+        empleados.forEach(empleado => {
+            const nombre = empleado.dataset.nombre;
+            const cedula = empleado.dataset.cedula;
+
+            if (nombre.includes(busqueda) || cedula.includes(busqueda)) {
+                empleado.style.display = 'grid';
+            } else {
+                empleado.style.display = 'none';
+            }
+        });
+    }
+</script>
 {% endblock %}
 
